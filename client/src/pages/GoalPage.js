@@ -198,7 +198,7 @@ const GoalPage = () => {
                                     <td>${goal.target_amount}</td>
                                     <td>
                                         <progress
-                                        value={goal.curent_amount}
+                                        value={goal.current_amount}
                                         max={goal.target_amount}
                                         style={{ width: '100%' }}
                                         />

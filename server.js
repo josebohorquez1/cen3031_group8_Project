@@ -364,7 +364,7 @@ app.post("/add-goal", (req, res) => {
     const {description, goal_type, category, target_amount, due_date} = req.body;
     user_email = req.cookies.user_email;
     if (target_amount < 1) {
-        return res.status(400).json({ error: "Amount must be greater than or equal to 1." });
+        return res.status(400).json({ error: "Goal amount must be greater than or equal to 1." });
     }
     if (!user_email) {
         return res.status(401).json({ message: 'Unauthorized' });
@@ -459,9 +459,19 @@ app.post("/update-goals", (req, res) => {
         if (currGoal === -1) {
             return res.status(404).json({ message: "Goal not found" });
         }
-
-        user.profile.goals[currGoal].current_amount += amountGoal;
-
+        //Checks if goal was met
+        if(+user.profile.goals[currGoal].current_amount === +user.profile.goals[currGoal].target_amount){
+            return res.status(404).json({ message: "Goal status has been met" });
+        }
+        //Check if goal will overlap.
+        if((+user.profile.goals[currGoal].current_amount + +amountGoal) >= +user.profile.goals[currGoal].target_amount){
+            user.profile.goals[currGoal].current_amount = +user.profile.goals[currGoal].target_amount;
+        }
+        else {
+            let tempCurrA = user.profile.goals[currGoal].current_amount;
+            let tempSum = +tempCurrA + +amountGoal;
+            user.profile.goals[currGoal].current_amount = tempSum;
+        }
         //currGoal.current_amount += amountGoal;
 
         // Check if the main balance is sufficient
@@ -501,6 +511,8 @@ app.post("/update-goals", (req, res) => {
         res.status(500).json({ message: 'Error retrieving user', error });
     });
 });
+
+
 
 app.delete("/delete-account", async (req, res) => {
     const {current_password} = req.body;

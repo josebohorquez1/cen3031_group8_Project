@@ -41,6 +41,12 @@ const AddBalance = () => {
             setError('Error: Amount must be greater than or equal to 1.');
             return;
         }
+        if(selected_goal){
+            if(goalA > amount){
+                setError('Error: Goal amount must be less than or equal to the amount sent to main balance.')
+                return;
+            }
+        }
         let data;
         let url;
         let urlGoals;
@@ -73,13 +79,15 @@ const AddBalance = () => {
         const response = await fetch(url, {
             method: 'POST',
             credentials: 'include', // Important to send cookies with the request
-                            headers: {
+            headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(data),
         });
         if (response.ok) {
-            setError(show_new_balance_input ? 'Balance added successfully!' : 'Balance updated successfully!');
+            if(!selected_goal){
+                setError(show_new_balance_input ? 'Balance added successfully!' : 'Balance Updated Successfully!');
+            }
             //clear the form fields after submission.
             setAmount(0);
             setBalanceName("");
@@ -117,7 +125,7 @@ const AddBalance = () => {
                     setgoalA(0);
                 }
                 else {
-                    setError('Error: Could not update balance and goals');
+                    setError('Error: Could not update goal progress, please ensure the goal has not been met!');
                 }
             }
             catch (error) {
@@ -181,7 +189,7 @@ return (
             </div>)}
 
 
-            {(selected_balance && !show_new_balance_input) && (<div>
+            {(selected_balance === "Main Balance" && !show_new_balance_input) && (<div>
                 <label htmlFor="goal-dropdown">Select Goal (Optional):</label>
                 <select
                     className='form-control"'
