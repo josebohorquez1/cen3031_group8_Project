@@ -197,30 +197,44 @@ return (
                         </header>
                         {/* Expenses table or empty state */}
                         <section>
-                            {profile.expenses.length === 0 ? (//No expenses; show empty state.
-                            <p>Oh dear, no transactions to show. Click the "add Expense or Update Balance" button to get started.</p>
-                            ) : (//Transactions exists; show table.
-                                <table className="table">
-                                <thead>
-                                <tr>
-                                <th>Category</th>
-                                <th>Description</th>
-                                <th>Amount</th>
-                                <th>Date</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {profile.expenses.map((expense, index) => (
-                                    <tr key={index}>
-                                    <td>{expense.category}</td>
-                                    <td>{expense.description}</td>
-                                    <td>${expense.amount}</td>
-                                    <td>{new Date(expense.date).toLocaleDateString()}</td>
+                            {(() => {
+                                const now = new Date();
+                                const current_month = now.getMonth();
+                                const current_year = now.getFullYear();
+                                const current_month_expenses  = profile.expenses.filter((expense) => {
+                                    const expense_date = new Date(expense.date);
+                                    return (
+                                        expense_date.getMonth() === current_month && expense_date.getFullYear() === current_year
+                                    );
+                                });
+                                const sorted_expenses = current_month_expenses.sort(
+                                    (a, b) => new Date(b.date) - new Date(a.date)
+                                );
+                                return sorted_expenses.length === 0 ? (
+                                    <p>Oh dear, no transactions to show. Click the "add Expense or Update Balance" button to get started.</p>
+                                ) : (
+                                    <table className="table">
+                                    <thead>
+                                    <tr>
+                                    <th>Category</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
                                     </tr>
-                                    ))}
-                                    </tbody>
-                                    </table>
-                            )}
+                                    </thead>
+                                    <tbody>
+                                    {sorted_expenses.map((expense, index) => (
+                                        <tr key={index}>
+                                        <td>{expense.category}</td>
+                                        <td>{expense.description}</td>
+                                        <td>${expense.amount}</td>
+                                        <td>{new Date(expense.date).toLocaleDateString()}</td>
+                                        </tr>
+                                        ))}
+                                        </tbody>
+                                        </table>
+                                    );
+                            })()}
                         </section>
                         </main>
                     </div>
