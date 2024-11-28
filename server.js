@@ -552,4 +552,27 @@ app.get('/spending-report', (req, res) => {
         });
 });
 
+app.post('/update-budget', (req, res) => {
+    const amount = req.body;
+    const user_email = req.cookies.user_email;
+    if (!user_email) return res.status(401).json({ message: "Unauthorized" });
+    const current_date = Date.now();
+    User.findOneAndUpdate({email: user_email}, {
+        $set: {
+            "profile.budget": {amount,
+                date: current_date
+            },
+        },
+        $pull: {
+            "profile.goals": {goal_type: "spending"}
+        }
+    }, {new: true}).then((updated_user)=> {
+        if (!updated_user) return res.status(404).json({ message: "User not found" });
+        res.status(200).json({message: "Budget updated successfully, and spending goals cleared!", profile: updatedUser.profile});
+    }).catch((error) => {
+        console.error("Error updating budget and clearing goals:", error);
+        res.status(500).json({message: "Error updating budget and clearing goals.", error});
+    });
+});
+
 app.listen(PORT, () => {console.log(`Server running on port ${PORT}`);});

@@ -12,6 +12,8 @@ const Profile_component = () => {
     const [monthly_budget, setMonthlyBudget] = useState(0);
     const [name_error, setNameError] = useState("");
     const navigate = useNavigate();
+    const [showBudgetModal, setShowBudgetModal] = useState(false);
+    const [newMonthlyBudget, setNewMonthlyBudget] = useState(0);
 
     useEffect(() => {
         fetch('http://localhost:5000/profile', {
@@ -20,15 +22,44 @@ const Profile_component = () => {
         }).then((response) => response.json()).then((data) => {
             if (data.profile) {
                 setProfile(data.profile);
+                const lastBudgetDate = new Date(data.profile.budget?.date);
+                const currentDate = new Date();
+                if (!isNaN(lastBudgetDate) && (lastBudgetDate.getFullYear() !== currentDate.getFullYear() || lastBudgetDate.getMonth() !== currentDate.getMonth())) {
+                    setShowBudgetModal(true);
+                }
             }
             else if (data.message) {
                 setError(data.message);
             }
         }).catch((err) => {
             setError("Error fetching profile.");
-
         });
     }, []);
+
+    const handleBudgetUpdate = async () => {
+        const updatedBudget = {amount: newMonthlyBudget};
+        try {
+            const response = await fetch('http://localhost:5000/update-budget', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify(updatedBudget),
+            });
+            if (response.ok) {
+                setProfile((prevProfile) => ({...prevProfile, budget: updatedBudget,}));
+                setShowBudgetModal(false);
+            }
+            else {
+                setError("Error updating budget.");
+            }
+        }
+        catch(error) {
+            setError("Error submitting budget update.");
+        }
+    };
+
     const handleNameChange = (setter) => (e) => {
         const value = e.target.value;
         const regex = /^[a-zA-Z]*$/; // Only alphabetic characters
@@ -190,6 +221,58 @@ return (
                         <header className="d-flex justify-content-between align-items-center py-3 mb-4 border-bottom">
                             <div>
                             <h1>Welcome, {profile.first_name}!</h1>
+                            <div
+    className={`modal ${showBudgetModal ? 'show' : ''}`}
+    tabIndex="-1"
+    style={{ display: showBudgetModal ? 'block' : 'none' }}
+>
+    <div className="modal-dialog">
+        <div className="modal-content">
+            <div className="modal-header">
+                <h5 className="modal-title">Set Your Budget for This Month</h5>
+                <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowBudgetModal(false)}
+                ></button>
+            </div>
+            <div className="modal-body">
+                <form>
+                    <div className="mb-3">
+                        <label htmlFor="monthlyBudget" className="form-label">
+                            Monthly Budget
+                        </label>
+                        <input
+                            type="number"
+                            className="form-control"
+                            id="monthlyBudget"
+                            placeholder="Enter your budget"
+                            value={newMonthlyBudget}
+                            onChange={(e) => setNewMonthlyBudget(e.target.value)}
+                            required
+                        />
+                    </div>
+                </form>
+            </div>
+            <div className="modal-footer">
+                <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowBudgetModal(false)}
+                >
+                    Cancel
+                </button>
+                <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleBudgetUpdate}
+                >
+                    Save Budget
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
                             {profile.balances.map((balance, index) => (
                                 <h2 key={index}>{balance.balance_type}: ${balance.amount}</h2>
                             ))
