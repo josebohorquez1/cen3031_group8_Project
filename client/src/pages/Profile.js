@@ -297,7 +297,7 @@ return (
                                     (a, b) => new Date(b.date) - new Date(a.date)
                                 );
                                 return sorted_expenses.length === 0 ? (
-                                    <p>Oh dear, no transactions to show. Click the "add Expense or Update Balance" button to get started.</p>
+                                    <p>Oh dear, no transactions to show for this month. Click the "add Expense or Update Balance" button to get started.</p>
                                 ) : (
                                     <table className="table">
                                     <thead>
