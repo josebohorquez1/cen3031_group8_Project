@@ -179,6 +179,9 @@ return (
                         <li className="nav-item">
                             <Link to="/update-profile" className="nav-link">Update Profile</Link>
                         </li>
+                        <li className="nav-item">
+                            <Link to="/spending-report" className="nav-link">View Spending Report</Link>
+                        </li>
                         </ul>
                         </div>
                         </nav>

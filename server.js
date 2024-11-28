@@ -498,4 +498,58 @@ app.delete("/delete-account", async (req, res) => {
     }
 });
 
+app.get('/spending-report', (req, res) => {
+    const user_email = req.cookies.user_email;
+
+    if (!user_email) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    User.findOne({ email: user_email })
+        .select('profile')
+        .then(user => {
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            const { expenses, balances } = user.profile;
+
+            // Calculate total income
+            const totalIncome = balances.reduce((sum, b) => sum + b.amount, 0);
+
+            // Calculate total spending and spending by category
+            let totalSpent = 0;
+            const spendingByCategory = {};
+            const excludedCategories = ['Income', 'Transfer'];
+            expenses.forEach(expense => {
+                if (!excludedCategories.includes(expense.category)) {
+                totalSpent += expense.amount;
+                spendingByCategory[expense.category] = (spendingByCategory[expense.category] || 0) + expense.amount;
+                }
+            });
+
+            // Generate insights
+            const recommendations = [];
+            Object.entries(spendingByCategory).forEach(([category, amount]) => {
+                if (amount > 0.5 * totalSpent) {
+                    recommendations.push(`Consider reducing spending on ${category}.`);
+                }
+            });
+
+            // Construct report
+            const report = {
+                totalIncome,
+                totalSpent,
+                spendingByCategory,
+                recommendations: recommendations.length > 0 ? recommendations : ["You're managing your spending well!"]
+            };
+
+            res.status(200).json(report);
+        })
+        .catch(err => {
+            console.error(err);
+            res.status(500).json({ message: 'Error generating report', error: err.message });
+        });
+});
+
 app.listen(PORT, () => {console.log(`Server running on port ${PORT}`);});
