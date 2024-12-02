@@ -399,13 +399,15 @@ app.delete("/remove-goal", (req, res) => {
 });
 
 app.post("/update-profile", async (req, res) => {
-    const {first_name, last_name, email, new_password, current_password} = req.body;
-    user_email = req.cookies.user_email;
+    const { first_name, last_name, email, new_password, current_password } = req.body;
+    const user_email = req.cookies.user_email;
+
     if (!user_email) {
         return res.status(401).json({ message: 'Unauthorized' });
     }
+
     try {
-        const user = await User.findOne({email: user_email});
+        const user = await User.findOne({ email: user_email });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -413,33 +415,40 @@ app.post("/update-profile", async (req, res) => {
         if (!password_matches) {
             return res.status(400).json({ message: 'Incorrect current password' });
         }
-        const has_new_info = (
-            (first_name && first_name !== user.profile.first_name) ||
-            (last_name && last_name !== user.profile.last_name) ||
-            (email && email !== user.email) ||
-            (new_password && !(await bcrypt.compare(new_password, user.password)))
-        );
-        if (!has_new_info) {
-            return res.status(400).json({ message: 'No new information to update' });
+        const updates = {};
+        if (first_name && first_name !== user.profile.first_name) {
+            updates['profile.first_name'] = first_name;
         }
-        if (first_name && first_name !== user.profile.first_name) user.profile.first_name = first_name;
-        if (last_name && last_name !== user.profile.last_name) user.profile.last_name = last_name;
+        if (last_name && last_name !== user.profile.last_name) {
+            updates['profile.last_name'] = last_name;
+        }
         if (email && email !== user.email) {
-            const check_email = await User.findOne({email: email});
-            if (check_email) return res.status(400).json({ message: 'Email is already in use' });
-            user.email = email;
-            const session_options = {
+            const check_email = await User.findOne({ email });
+            if (check_email) {
+                return res.status(400).json({ message: 'Email is already in use' });
+            }
+            updates.email = email;
+            res.cookie('user_email', email, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'Strict'//Prevents cookies from being sent from different websites.
-            };
-        res.cookie('user_email', email, session_options);
+                sameSite: 'Strict',
+            });
         }
-        if (new_password && !(await bcrypt.compare(new_password, user.password))) user.password = await bcrypt.hash(new_password, salt_rounds);
-        await user.save();
-        res.status(200).json({ message: 'Profile updated successfully', user });
-    }
-    catch(err) {
+        if (new_password && !(await bcrypt.compare(new_password, user.password))) {
+            const salt_rounds = 10; // Define salt rounds if not already defined
+            updates.password = await bcrypt.hash(new_password, salt_rounds);
+        }
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({ message: 'No new information to update' });
+        }
+        const updatedUser = await User.findOneAndUpdate(
+            { email: user_email },
+            { $set: updates },
+            { new: true } // Return the updated document
+        );
+
+        res.status(200).json({ message: 'Profile updated successfully', user: updatedUser });
+    } catch (err) {
         console.error("Error updating profile:", err);
         res.status(500).json({ message: 'Error updating profile', error: err.message });
     }
