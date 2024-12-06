@@ -131,6 +131,49 @@ app.get('/user', (req, res) => {
         res.status(500).json({ message: 'Error fetching profile', err });
     });
 });
+
+// Chat Route
+app.post('/chat', async (req, res) => {
+    const user_email = req.cookies.user_email;
+
+    if (!user_email) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { question } = req.body;
+
+    if (!question) {
+        return res.status(400).json({ message: 'Question is required.' });
+    }
+
+    try {
+        const user = await User.findOne({ email: user_email }).select('profile');
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const { profile } = user;
+
+        const userDataSummary = `
+            User's financial data:
+            - Name: ${profile.first_name} ${profile.last_name || ''}
+            - Total Income: $${profile.balances.reduce((sum, b) => sum + b.amount, 0)}
+            - Monthly Budget: $${profile.budget?.amount || 0}
+            - Expenses:
+                ${profile.expenses.map(
+                    (expense, index) =>
+                        `${index + 1}. ${expense.category}: $${expense.amount} (${expense.description || 'No description'})`
+                ).join('\n')}
+        `;
+
+        const prompt = `${userDataSummary}\nUser's Question: ${question}\nProvide an insightful and helpful response.`;
+
+        const answer = await callOpenAI(prompt);
+        res.json({ answer });
+    } catch (err) {
+        console.error("Error processing chat:", err);
+        res.status(500).json({ message: 'Error generating response.' });
+    }
+});
+
 app.get('/profile', (req, res) => {
     const user_email = req.cookies.user_email;
     if (!user_email) {
