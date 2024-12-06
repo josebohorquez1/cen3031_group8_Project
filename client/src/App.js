@@ -28,7 +28,8 @@ const App = () => {
       <Route path="/update-profile" element={<UpdateProfile/>}/>
       <Route path="/spending-report" element={<SpendingReport/>}/>
       <Route path="*" element={<NotFound/>}/>
-          </Routes>
+      <Route path="/chatbot" element={<Chatbot />} />
+                </Routes>
     <Footer/>
     </div>
       );

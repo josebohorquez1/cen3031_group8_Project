@@ -213,6 +213,9 @@ return (
                         <li className="nav-item">
                             <Link to="/spending-report" className="nav-link">View Spending Report</Link>
                         </li>
+                        <li className="nav-item">
+                            <Link to="/chatbot" className="nav-link">Ask Ai a Question</Link>
+                        </li>
                         </ul>
                         </div>
                         </nav>
