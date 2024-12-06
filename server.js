@@ -11,12 +11,37 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 app.use(cors(cors_options));
 app.use(express.json());
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 //MongoDB Connect
 const dbURI = "mongodb+srv://BryanG156:Brohood156@cen3031budgetbuddy.kumw8.mongodb.net/?retryWrites=true&w=majority&appName=CEN3031BudgetBuddy"
 mongoose.connect(dbURI)
     .then((result) => console.log("Connected to DB"))
     .catch((err)=> console.log(err));
+
+    // Call OpenAI Function
+async function callOpenAI(prompt) {
+    try {
+        const response = await axios.post(
+            "https://api.openai.com/v1/chat/completions",
+            {
+                model: "gpt-3.5-turbo",
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.7,
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${OPENAI_API_KEY}`,
+                },
+            }
+        );
+        return response.data.choices[0].message.content;
+    } catch (error) {
+        console.error("Error calling OpenAI API:", error.response?.data || error.message);
+        throw new Error("Failed to connect to OpenAI API");
+    }
+}
 
 app.get('/', (req, res) => {res.send("Welcome to the project!");});
 const bcrypt = require('bcrypt');
