@@ -11,7 +11,7 @@ import UpdateProfile from './pages/UpdateProfile';
 import Footer from "./pages/Footer";
 import NotFound from "./pages/NotFound";
 import SpendingReport from "./pages/SpendingReport";
-
+import Chatbot from './pages/Chatbot';
 
 const App = () => {
   return (
